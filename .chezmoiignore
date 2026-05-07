@@ -2,5 +2,5 @@
 AppData/
 {{ else }}
 .config/nvim
-.config/alacritty
+.config/rio
 {{ end }}
