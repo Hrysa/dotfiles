@@ -75,19 +75,25 @@ end, { desc = "next diagnostic" })
 --------------------------------------------------------------------------------
 -- 基础插件：主题、Mason、LSP、补全、自动配对
 vim.pack.add({
-	{ src = "https://github.com/mofiqul/vscode.nvim" },
-	{ src = "https://github.com/catppuccin/nvim", name = "catppuccin" },
-	{ src = "https://github.com/williamboman/mason.nvim" },
-	{ src = "https://github.com/williamboman/mason-lspconfig.nvim" },
-	{ src = "https://github.com/neovim/nvim-lspconfig" },
-	{ src = "https://github.com/seblyng/roslyn.nvim" }, -- C# 支持
-	{ src = "https://github.com/saghen/blink.cmp" }, -- 补全引擎
-	{ src = "https://github.com/echasnovski/mini.pairs" }, -- 自动括号
-	{ src = "https://github.com/nvim-telescope/telescope.nvim", tag = "0.1.x" },
-	{ src = "https://github.com/nvim-lua/plenary.nvim" }, -- 必选依赖
-	{ src = "https://github.com/nvim-telescope/telescope-fzf-native.nvim", build = "make" },
-	{ src = "https://github.com/lewis6991/gitsigns.nvim" }, -- 必选依赖
+	"mofiqul/vscode.nvim" ,
+	"williamboman/mason.nvim",
+	"williamboman/mason-lspconfig.nvim",
+	"neovim/nvim-lspconfig" ,
+	"seblyng/roslyn.nvim" , -- C# 支持
+	"saghen/blink.lib" , -- 补全引擎
+	"saghen/blink.cmp" , -- 补全引擎
+	"echasnovski/mini.pairs" , -- 自动括号
+    "nvim-telescope/telescope.nvim",
+	"nvim-lua/plenary.nvim" , -- 必选依赖
+    -- { "nvim-telescope/telescope-fzf-native.nvim", build = "make"},
+    "nvim-telescope/telescope-fzf-native.nvim",
+	"lewis6991/gitsigns.nvim" , -- 必选依赖
 })
+
+
+local cmp = require('blink.cmp')
+cmp.build():wait(60000)
+cmp.setup()
 
 vim.cmd("colorscheme vscode")
 
