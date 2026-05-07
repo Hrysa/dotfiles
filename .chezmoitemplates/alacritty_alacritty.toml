@@ -4,7 +4,11 @@ SHELL = "pwsh"
 # {{ end }}
 
 [font]
+# {{ if eq .chezmoi.os "windows" }}
 size = 13
+# {{ else }}
+size = 16
+# {{ end }}
 builtin_box_drawing = false
 
 [font.normal]
