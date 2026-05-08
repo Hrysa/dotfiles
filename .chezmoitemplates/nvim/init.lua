@@ -14,6 +14,8 @@ if vim.lsp.inlay_hint then
 end
 
 local key = vim.keymap.set
+local gh = function(x) return 'https://github.com/' .. x end
+
 key("i", "jj", "<esc>")
 key({ "n", "i", "v" }, "<C-s>", "<ESC>:w<CR>")
 
@@ -74,25 +76,26 @@ end, { desc = "next diagnostic" })
 --------------------------------------------------------------------------------
 -- 基础插件：主题、Mason、LSP、补全、自动配对
 vim.pack.add({
-    "williamboman/mason.nvim",
-    "williamboman/mason-lspconfig.nvim",
-    "neovim/nvim-lspconfig",
-    "seblyng/roslyn.nvim",  -- C# 支持
-    "saghen/blink.lib",     -- 补全引擎
-    "saghen/blink.cmp",     -- 补全引擎
-    "echasnovski/mini.pairs", -- 自动括号
-    "nvim-telescope/telescope.nvim",
-    "nvim-lua/plenary.nvim", -- 必选依赖
-    -- { "nvim-telescope/telescope-fzf-native.nvim", build = "make"},
-    "nvim-telescope/telescope-fzf-native.nvim",
-    "lewis6991/gitsigns.nvim", -- 必选依赖
-    "https://github.com/shatur/neovim-ayu",
+    gh("williamboman/mason.nvim"),
+    gh("williamboman/mason-lspconfig.nvim"),
+    gh("neovim/nvim-lspconfig"),
+    gh("seblyng/roslyn.nvim"),  -- C# 支持
+    gh("saghen/blink.lib"),     -- 补全引擎
+    gh("saghen/blink.cmp"),     -- 补全引擎
+    gh("echasnovski/mini.pairs"), -- 自动括号
+    gh("nvim-telescope/telescope.nvim"),
+    gh("nvim-lua/plenary.nvim"), -- 必选依赖
+    gh("nvim-telescope/telescope-fzf-native.nvim"),
+    gh("lewis6991/gitsigns.nvim"), -- 必选依赖
+    gh("shatur/neovim-ayu"),
 })
 
-
 local cmp = require('blink.cmp')
-cmp.build():wait(60000)
-cmp.setup()
+
+if cmp.build then
+    cmp.build():wait(60000)
+    cmp.setup()
+end
 
 vim.cmd("colorscheme ayu-mirage")
 
@@ -274,3 +277,17 @@ vim.api.nvim_create_autocmd("CursorMoved", {
         vim.diagnostic.show()
     end,
 })
+
+-- 定义一个函数来清除背景色
+local function transparent_background()
+    local groups = {
+        "Normal", "NormalNC", "LineNr", "Folded", "NonText",
+        "SignColumn", "EndOfBuffer", "NormalFloat", "FloatBorder"
+    }
+    for _, group in ipairs(groups) do
+        vim.api.nvim_set_hl(0, group, { bg = "NONE", ctermbg = "NONE" })
+    end
+end
+
+-- 在加载主题后执行
+transparent_background()
