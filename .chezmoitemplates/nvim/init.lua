@@ -58,7 +58,6 @@ key("n", "K", vim.lsp.buf.hover)
 key("n", "<leader>n", "<cmd>enew<cr>", { desc = "New empty buffer" })
 key("n", "<leader>fm", vim.lsp.buf.format)
 
-
 -- 快速跳转诊断
 key("n", "[d", function()
 	vim.diagnostic.jump({ wrap = true, count = -1 })
@@ -222,7 +221,9 @@ key("n", "<leader>a", "<cmd>lua vim.lsp.buf.code_action()<CR>", { desc = "Code A
 key("n", "<leader>ld", require("gitsigns").reset_hunk, { desc = "撤销当前代码块修改" })
 key("n", "<leader>lp", require("gitsigns").preview_hunk, { desc = "预览代码块差异" })
 
-key("n", "<leader>fr", builtin.oldfiles, { desc = "Telescope Old Files" })
+key("n", "<leader>fr", function()
+	builtin.oldfiles({ only_cwd = true })
+end, { desc = "Telescope Old Files" })
 key("n", "<leader>ff", builtin.find_files, { desc = "Telescope Find Files" })
 key("n", "<leader>fg", builtin.live_grep, { desc = "Telescope Live Grep" })
 key("n", "<Tab>", function()
