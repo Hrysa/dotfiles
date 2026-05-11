@@ -1,6 +1,11 @@
 -- echo "{{ .chezmoi.os }}"
 ---@diagnostic disable: undefined-global
 
+if vim.loader then
+  vim.loader.enable()
+end
+
+vim.opt.signcolumn = "yes"
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.tabstop = 4
@@ -88,7 +93,54 @@ vim.pack.add({
 local cmp = require("blink.cmp")
 
 cmp.build():wait(60000)
-cmp.setup()
+-- 配置 Blink.cmp (补全)
+cmp.setup({
+	-- keymap = { preset = "super-tab" },
+	keymap = {
+		-- 禁用预设，手动控制以确保行为符合预期
+		preset = "none",
+
+		["<Tab>"] = {
+			function(cmp)
+				if cmp.is_menu_visible() then
+					-- 如果补全菜单开着，就切换到下一个，而不是直接补全
+					return cmp.select_next()
+				elseif cmp.is_snippet_active() then
+					-- 如果在 Snippet 模式下，跳到下一个占位符
+					return cmp.snippet_forward()
+				else
+					-- 否则，执行原生 Tab（缩进）
+					return cmp.fallback()
+				end
+			end,
+			"fallback",
+		},
+
+		["<S-Tab>"] = {
+			function(cmp)
+				if cmp.is_menu_visible() then
+					return cmp.select_prev()
+				elseif cmp.is_snippet_active() then
+					return cmp.snippet_backward()
+				else
+					return cmp.fallback()
+				end
+			end,
+			"fallback",
+		},
+
+		-- 使用 Enter 或其他键来确认补全
+		["<CR>"] = { "accept", "fallback" },
+		-- 如果你习惯 Tab 选人，Enter 换行，可以把 <CR> 设为 fallback
+	},
+	completion = {
+		list = { selection = { preselect = true, auto_insert = false } },
+		menu = { border = "rounded" },
+		documentation = { auto_show = true, window = { border = "rounded" } },
+		ghost_text = { enabled = true },
+	},
+	signature = { enabled = true, window = { border = "rounded" } },
+})
 
 vim.cmd("colorscheme ayu-mirage")
 
@@ -100,18 +152,6 @@ require("mason").setup({
 	},
 })
 require("gitsigns").setup({ current_line_blame = true })
-
--- 配置 Blink.cmp (补全)
-require("blink.cmp").setup({
-	keymap = { preset = "super-tab" },
-	completion = {
-		list = { selection = { preselect = true, auto_insert = false } },
-		menu = { border = "rounded" },
-		documentation = { auto_show = true, window = { border = "rounded" } },
-		ghost_text = { enabled = true },
-	},
-	signature = { enabled = true, window = { border = "rounded" } },
-})
 
 -- 初始化 Mini.Pairs (自动括号)
 require("mini.pairs").setup()
