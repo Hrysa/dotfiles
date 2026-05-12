@@ -2,7 +2,11 @@
 ---@diagnostic disable: undefined-global
 
 if vim.loader then
-  vim.loader.enable()
+	vim.loader.enable()
+end
+
+if vim.lsp.inlay_hint then
+	vim.lsp.inlay_hint.enable(true)
 end
 
 vim.opt.signcolumn = "yes"
@@ -14,10 +18,7 @@ vim.opt.expandtab = true
 vim.opt.termguicolors = true
 vim.opt.updatetime = 200
 vim.g.mapleader = " "
-
-if vim.lsp.inlay_hint then
-	vim.lsp.inlay_hint.enable(true)
-end
+vim.opt.smartcase = true
 
 local key = vim.keymap.set
 local gh = function(x)
@@ -54,7 +55,6 @@ key("n", "<leader>dd", vim.diagnostic.open_float, { desc = "diagnostic messages"
 
 -- LSP 快捷键
 key("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition" })
-key("n", "gD", vim.lsp.buf.declaration, { desc = "Go to declaration" })
 key("n", "gi", vim.lsp.buf.implementation, { desc = "Go to implementation" })
 key("n", "gr", vim.lsp.buf.references, { desc = "Find references" })
 key("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename symbol" })
@@ -62,6 +62,7 @@ key("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "LSP code action" })
 key("n", "K", vim.lsp.buf.hover)
 key("n", "<leader>n", "<cmd>enew<cr>", { desc = "New empty buffer" })
 key("n", "<leader>fm", vim.lsp.buf.format)
+key("n", "K", vim.lsp.buf.hover, { desc = "LSP: Hover Documentation" })
 
 -- 快速跳转诊断
 key("n", "[d", function()
@@ -83,55 +84,24 @@ vim.pack.add({
 	gh("saghen/blink.lib"), -- 补全引擎
 	gh("saghen/blink.cmp"), -- 补全引擎
 	gh("echasnovski/mini.pairs"), -- 自动括号
-	gh("nvim-telescope/telescope.nvim"),
 	gh("nvim-lua/plenary.nvim"), -- 必选依赖
-	gh("nvim-telescope/telescope-fzf-native.nvim"),
 	gh("lewis6991/gitsigns.nvim"), -- 必选依赖
 	gh("shatur/neovim-ayu"),
+	gh("kevinhwang91/nvim-bqf"),
+	gh("ibhagwan/fzf-lua"),
+	gh("milanglacier/minuet-ai.nvim"),
 })
 
+vim.cmd("colorscheme ayu-mirage")
+
 local cmp = require("blink.cmp")
-
 cmp.build():wait(60000)
--- 配置 Blink.cmp (补全)
 cmp.setup({
-	-- keymap = { preset = "super-tab" },
 	keymap = {
-		-- 禁用预设，手动控制以确保行为符合预期
 		preset = "none",
-
-		["<Tab>"] = {
-			function(cmp)
-				if cmp.is_menu_visible() then
-					-- 如果补全菜单开着，就切换到下一个，而不是直接补全
-					return cmp.select_next()
-				elseif cmp.is_snippet_active() then
-					-- 如果在 Snippet 模式下，跳到下一个占位符
-					return cmp.snippet_forward()
-				else
-					-- 否则，执行原生 Tab（缩进）
-					return cmp.fallback()
-				end
-			end,
-			"fallback",
-		},
-
-		["<S-Tab>"] = {
-			function(cmp)
-				if cmp.is_menu_visible() then
-					return cmp.select_prev()
-				elseif cmp.is_snippet_active() then
-					return cmp.snippet_backward()
-				else
-					return cmp.fallback()
-				end
-			end,
-			"fallback",
-		},
-
-		-- 使用 Enter 或其他键来确认补全
+		["<Tab>"] = { "select_next", "fallback" },
+		["<S-Tab>"] = { "select_prev", "fallback" },
 		["<CR>"] = { "accept", "fallback" },
-		-- 如果你习惯 Tab 选人，Enter 换行，可以把 <CR> 设为 fallback
 	},
 	completion = {
 		list = { selection = { preselect = true, auto_insert = false } },
@@ -140,9 +110,36 @@ cmp.setup({
 		ghost_text = { enabled = true },
 	},
 	signature = { enabled = true, window = { border = "rounded" } },
+	sources = {
+		default = { "lsp", "path", "buffer", "snippets", "minuet" },
+		providers = {
+			minuet = {
+				name = "minuet",
+				module = "minuet.blink",
+				async = true,
+				timeout_ms = 3000,
+				score_offset = 50, -- Gives minuet higher priority among suggestions
+			},
+		},
+	},
 })
 
-vim.cmd("colorscheme ayu-mirage")
+require("minuet").setup({
+	request_timeout = 2.5,
+	throttle = 700, -- Increase to reduce costs and avoid rate limits
+	debounce = 500, -- Increase to reduce costs and avoid rate limits
+	provider = "openai_fim_compatible",
+	provider_options = {
+		openai_fim_compatible = {
+			api_key = "DEEPSEEK_API_KEY",
+			name = "deepseek",
+			optional = {
+				max_tokens = 256,
+				top_p = 0.9,
+			},
+		},
+	},
+})
 
 -- 初始化 Mason
 require("mason").setup({
@@ -204,94 +201,24 @@ require("roslyn").setup({
 })
 
 -- 优化 Inlay Hint 颜色 (更像 Rider 的虚色)
-vim.api.nvim_set_hl(0, "LspInlayHint", { fg = "#808080", italic = true })
-
-require("telescope").setup({
-	defaults = {
-		-- 常用配置
-		initial_mode = "insert", -- 打开时直接进入输入模式
-		theme = "dropdown", -- 使用下拉样式，更像 IDE
-		file_ignore_patterns = { -- 忽略这些文件夹
-			"node_modules",
-			"%.bin/",
-			"%.obj/",
-			"%.git/",
-			"target/",
-			"build/",
-		},
-		-- 搜索设置
-		vimgrep_arguments = {
-			"rg",
-			"--color=never",
-			"--no-heading",
-			"--with-filename",
-			"--line-number",
-			"--column",
-			"--smart-case",
-			"--hidden", -- 搜隐藏文件
-			"--glob",
-			"!**/.git/*", -- 但排除 .git 目录
-		},
-	},
-	pickers = {
-		find_files = {
-			hidden = true, -- find_files 也要搜隐藏文件
-		},
-	},
-})
-
-local builtin = require("telescope.builtin")
--- 跳转到定义 (Go to Definition)
-key("n", "gd", builtin.lsp_definitions, { desc = "Telescope: Definition" })
-
--- 查看引用 (Find References) - 这比原生的列表好用太多，带代码预览
-key("n", "gr", builtin.lsp_references, { desc = "Telescope: References" })
-
--- 悬浮提示 (Hover)
--- 注意：K (Hover) 建议保留原生，因为 Telescope 没有对应的“悬浮文档”功能
--- 但你可以用 lsp_implementations 来替代部分查找逻辑
-key("n", "K", vim.lsp.buf.hover, { desc = "LSP: Hover Documentation" })
-
--- 代码操作 (Code Action)
-key({ "n" }, "<leader>a", function()
-	builtin.lsp_code_actions(require("telescope.themes").get_cursor())
-end, { desc = "Telescope: Code Action" })
-key("n", "<leader>a", "<cmd>lua vim.lsp.buf.code_action()<CR>", { desc = "Code Action" })
+-- vim.api.nvim_set_hl(0, "LspInlayHint", { fg = "#808080", italic = true })
 
 key("n", "<leader>ld", require("gitsigns").reset_hunk, { desc = "撤销当前代码块修改" })
 key("n", "<leader>lp", require("gitsigns").preview_hunk, { desc = "预览代码块差异" })
 
-key("n", "<leader>fr", function()
-	builtin.oldfiles({ only_cwd = true })
-end, { desc = "Telescope Old Files" })
-key("n", "<leader>ff", builtin.find_files, { desc = "Telescope Find Files" })
-key("n", "<leader>fg", builtin.live_grep, { desc = "Telescope Live Grep" })
-key("n", "<Tab>", function()
-	require("telescope.builtin").buffers({
-		sort_mru = true,
-		initial_mode = "normal",
-		-- 核心：列表从上往下排
-		sorting_strategy = "ascending",
-		-- 核心：使用下拉或中心布局，隐藏预览并压缩高度
-		layout_strategy = "center",
-		-- layout_strategy = "horizontal",
-		layout_config = {
-			width = 0.5,
-			height = 0.3,
-			prompt_position = "top", -- 输入框放在顶部（配合 ascending 会很自然）
-		},
-		-- 彻底隐藏提示符（虽然输入框还在，但看起来像个标题）
-		prompt_title = "Buffer Switcher",
-		results_title = false,
-		attach_mappings = function(prompt_bufnr, map)
-			map("n", "d", require("telescope.actions").delete_buffer)
-			-- 让 Tab 键在列表里直接向下移动，而不是切换输入框
-			map("n", "<Tab>", require("telescope.actions").move_selection_next)
-			map("n", "<S-Tab>", require("telescope.actions").move_selection_previous)
-			return true
-		end,
-	})
-end, { desc = "Rider-style Buffer Switcher" })
+local builtin = require("fzf-lua")
+builtin.setup({
+	fzf_opts = {
+		-- bg+ 是选中行的背景，fg+ 是选中行的文字
+		-- hl 是匹配到的关键词颜色
+		["--color"] = "fg:15,bg:-1,hl:203,fg+:255,bg+:238,hl+:203,info:109,prompt:203,pointer:203,marker:203,spinner:109,header:109",
+	},
+})
+key("n", "<leader>fr", builtin.oldfiles)
+key("n", "<leader>ff", builtin.files)
+key("n", "<leader>fg", builtin.live_grep)
+key("n", "<Tab>", builtin.buffers)
+key("n", "<leader>fl", builtin.lsp_live_workspace_symbols)
 
 vim.diagnostic.config({
 	virtual_text = {
@@ -313,23 +240,14 @@ vim.api.nvim_create_autocmd("CursorMoved", {
 	end,
 })
 
--- 定义一个函数来清除背景色
-local function transparent_background()
-	local groups = {
-		"Normal",
-		"NormalNC",
-		"LineNr",
-		"Folded",
-		"NonText",
-		"SignColumn",
-		"EndOfBuffer",
-		"NormalFloat",
-		"FloatBorder",
-	}
-	for _, group in ipairs(groups) do
-		vim.api.nvim_set_hl(0, group, { bg = "NONE", ctermbg = "NONE" })
+function ToggleQuickfix()
+	for _, win in ipairs(vim.fn.getwininfo()) do
+		if win.quickfix == 1 then
+			vim.cmd("cclose")
+			return
+		end
 	end
+	vim.cmd("copen")
 end
 
--- 在加载主题后执行
-transparent_background()
+vim.keymap.set("n", "<leader>q", ToggleQuickfix)

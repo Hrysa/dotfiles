@@ -1,6 +1,7 @@
 {{ if ne .chezmoi.os "windows" }}
 AppData/
+Documents/PowerShell/
 {{ else }}
 .config/nvim
-.config/rio
+.config/fish
 {{ end }}
