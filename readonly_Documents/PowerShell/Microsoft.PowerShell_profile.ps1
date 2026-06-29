@@ -38,8 +38,12 @@ function ssh { ssh.exe $args; $Host.UI.RawUI.WindowTitle = "PowerShell" }
 function kn { k -n (Split-Path -leaf -path (Get-Location)) $args }
 
 Set-PSReadLineOption -HistorySearchCursorMovesToEnd
-Set-PSReadLineOption -PredictionSource HistoryAndPlugin
-Set-PSReadLineOption -PredictionViewStyle ListView
+
+# Only enable prediction features when VT processing is available (interactive terminal)
+if (-not [Console]::IsOutputRedirected) {
+    Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+    Set-PSReadLineOption -PredictionViewStyle ListView
+}
 
 # Shows navigable menu of all options when hitting Tab
 Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete

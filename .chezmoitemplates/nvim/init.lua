@@ -90,8 +90,10 @@ vim.pack.add({
 	gh("kevinhwang91/nvim-bqf"),
 	gh("ibhagwan/fzf-lua"),
 	gh("milanglacier/minuet-ai.nvim"),
+	gh("nvim-mini/mini.files"),
 })
 
+require('mini.files').setup()
 vim.cmd("colorscheme ayu-mirage")
 
 local cmp = require("blink.cmp")
